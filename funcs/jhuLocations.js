@@ -1,36 +1,28 @@
-var axios = require("axios");
-var cheerio = require("cheerio");
-const csv = require("csvtojson");
+var axios = require('axios');
+var cheerio = require('cheerio');
+const csv = require('csvtojson');
 
-var base =
-  "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/";
+var base = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/';
 
 var jhudata = async (keys, redis) => {
   let response;
-  const date = new Date();
-  try {
-    response = await axios.get(
-      `${base}0${date.getMonth() +
-        1}-${date.getDate()}-${date.getFullYear()}.csv`
-    );
-    console.log(
-      `USING 0${date.getMonth() + 1}-${date.getDate() -
-        1}-${date.getFullYear()}.csv CSSEGISandData`
-    );
-  } catch (err) {
-    response = await axios.get(
-      `${base}0${date.getMonth() + 1}-${date.getDate() -
-        1}-${date.getFullYear()}.csv`
-    );
-    console.log(
-      `USING 0${date.getMonth() + 1}-${date.getDate() -
-        1}-${date.getFullYear()}.csv CSSEGISandData`
-    );
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = `${today.getMonth() + 1}`.padStart(2, 0);
+
+  for (let day = today.getDate(); day > 0; day--) {
+    try {
+      response = await axios.get(`${base}${month}-${day.toString().padStart(2, 0)}-${year}.csv`);
+      console.log(`USING ${month}-${day.toString().padStart(2, 0)}-${year}.csv CSSEGISandData`);
+      break;
+    } catch (err) {
+      null;
+    }
   }
 
   const parsed = await csv({
     noheader: true,
-    output: "csv"
+    output: 'csv'
   }).fromString(response.data);
 
   // to store parsed data
@@ -39,7 +31,7 @@ var jhudata = async (keys, redis) => {
   for (const loc of parsed.splice(1)) {
     result.push({
       country: loc[1],
-      province: loc[0] === "" ? null : loc[0],
+      province: loc[0] === '' ? null : loc[0],
       updatedAt: loc[2],
       stats: {
         confirmed: loc[3],
